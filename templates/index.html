@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Weekly Reflow Temperature Monitoring</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+
+<style>
+:root{
+    --main:#0f5d78;
+    --main-dark:#09465c;
+    --bg:#f4f7fa;
+    --panel:#ffffff;
+    --header:#d9c6d8;
+    --border:#d7dde3;
+    --text:#1f2a33;
+}
+
+*{ box-sizing:border-box; }
+
+body{
+    margin:0;
+    font-family:Arial, sans-serif;
+    background:var(--bg);
+    color:var(--text);
+}
+
+.topbar{
+    position:sticky;
+    top:0;
+    z-index:10;
+    background:var(--header);
+    box-shadow:0 2px 8px rgba(0,0,0,0.12);
+}
+
+.title-row{
+    padding:16px 22px 8px 22px;
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-start;
+    gap:20px;
+}
+
+.title-block h1{
+    margin:0;
+    font-size:28px;
+    line-height:1.1;
+    color:var(--main-dark);
+    font-weight:700;
+}
+
+.title-block .subtitle{
+    margin-top:5px;
+    font-size:13px;
+    color:#53616b;
+}
+
+.status-card{
+    min-width:250px;
+    background:rgba(255,255,255,0.75);
+    border:1px solid rgba(255,255,255,0.6);
+    border-radius:8px;
+    padding:10px 14px;
+    font-size:13px;
+    line-height:1.5;
+    text-align:left;
+    box-shadow:0 1px 4px rgba(0,0,0,0.08);
+}
+
+.header{
+    padding:10px 22px 16px 22px;
+    display:grid;
+    grid-template-columns: 190px 190px 120px 330px 145px 110px;
+    gap:14px;
+    align-items:end;
+}
+
+.control label{
+    display:block;
+    font-size:12px;
+    margin-bottom:6px;
+    color:#2e3439;
+    font-weight:600;
+}
+
+input,select,button{
+    height:42px;
+    padding:8px 12px;
+    font-size:14px;
+    border:1px solid #aab2b9;
+    border-radius:6px;
+    background:white;
+}
+
+input,select{
+    width:100%;
+}
+
+button{
+    cursor:pointer;
+    transition:0.15s;
+    white-space:nowrap;
+}
+
+button:hover{
+    transform:translateY(-1px);
+    box-shadow:0 2px 5px rgba(0,0,0,0.12);
+}
+
+.btn-active{
+    background:var(--main);
+    color:white;
+    border-color:var(--main);
+    font-weight:700;
+}
+
+.button-group{
+    display:flex;
+    gap:8px;
+}
+
+.button-group button{
+    min-width:82px;
+}
+
+#speedBtn{
+    min-width:150px;
+}
+
+.legend-note{
+    padding:12px 22px;
+    font-size:13px;
+    color:#44515a;
+    background:#edf2f6;
+    border-bottom:1px solid var(--border);
+}
+
+.content-wrap{
+    padding:20px 22px 30px 22px;
+}
+
+.grid{
+    display:grid;
+    grid-template-columns:repeat(2, minmax(0,1fr));
+    gap:20px;
+}
+
+.card{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:14px;
+    box-shadow:0 2px 8px rgba(0,0,0,0.06);
+}
+
+.card h3{
+    margin:0 0 12px 0;
+    background:var(--main);
+    color:white;
+    display:inline-block;
+    padding:9px 18px;
+    border-radius:5px;
+    font-size:20px;
+    letter-spacing:0.2px;
+}
+
+.chartBox{
+    height:285px;
+}
+
+.note{
+    padding:35px;
+    font-size:20px;
+    color:#5d6870;
+}
+
+@media (max-width: 1200px){
+    .header{
+        grid-template-columns: repeat(3, minmax(160px,1fr));
+    }
+    .title-row{
+        flex-direction:column;
+    }
+    .status-card{
+        width:100%;
+    }
+}
+
+@media (max-width: 900px){
+    .grid{ grid-template-columns:1fr; }
+    .header{ grid-template-columns:1fr; }
+    .button-group{ flex-wrap:wrap; }
+}
+</style>
+</head>
+
+<body>
+
+<div class="topbar">
+    <div class="title-row">
+        <div class="title-block">
+            <h1>Weekly Reflow Temperature Monitoring</h1>
+            <div class="subtitle">SMT Process Engineering · Reflow Profile Dashboard</div>
+        </div>
+
+        <div id="status" class="status-card">
+            Last Refresh : -<br>
+            Rows : -
+        </div>
+    </div>
+
+    <div class="header">
+        <div class="control">
+            <label>From Date</label>
+            <input type="date" id="fromDate">
+        </div>
+
+        <div class="control">
+            <label>To Date</label>
+            <input type="date" id="toDate">
+        </div>
+
+        <div class="control">
+            <label>Line</label>
+            <select id="line">
+                <option>Line1</option>
+                <option>Line2</option>
+                <option>Line3</option>
+                <option>Line4</option>
+                <option>Line5</option>
+                <option>Line6</option>
+                <option>Line7</option>
+                <option>Line8</option>
+                <option>Line9</option>
+                <option>Line10</option>
+            </select>
+        </div>
+
+        <div class="control">
+            <label>Parameter</label>
+            <div class="button-group">
+                <button id="airBtn" class="btn-active">Air</button>
+                <button id="massBtn">Mass</button>
+                <button id="speedBtn">Conveyor Speed</button>
+            </div>
+        </div>
+
+        <div class="control">
+            <label>Value Label</label>
+            <button id="valueBtn">Show Value</button>
+        </div>
+
+        <div class="control">
+            <label>Data</label>
+            <button onclick="refreshData()">Refresh</button>
+        </div>
+    </div>
+</div>
+
+<div class="legend-note">
+    Actual = blue line, UCL/LCL = red dashed line, STD = green dashed line. Red points mean out of UCL/LCL.
+</div>
+
+<div class="content-wrap">
+    <div id="chartArea" class="grid"></div>
+</div>
+
+<script>
+Chart.register(ChartDataLabels);
+
+let rawData = [];
+let specData = {};
+let currentType = "air";
+let showValue = false;
+let charts = [];
+
+const airBtn = document.getElementById("airBtn");
+const massBtn = document.getElementById("massBtn");
+const speedBtn = document.getElementById("speedBtn");
+const valueBtn = document.getElementById("valueBtn");
+const line = document.getElementById("line");
+const fromDate = document.getElementById("fromDate");
+const toDate = document.getElementById("toDate");
+const statusBox = document.getElementById("status");
+const chartArea = document.getElementById("chartArea");
+
+airBtn.onclick = () => { currentType="air"; activeBtn(); drawCharts(); };
+massBtn.onclick = () => { currentType="mass"; activeBtn(); drawCharts(); };
+speedBtn.onclick = () => { currentType="speed"; activeBtn(); drawCharts(); };
+
+valueBtn.onclick = () => {
+    showValue = !showValue;
+    valueBtn.innerText = showValue ? "Hide Value" : "Show Value";
+    drawCharts();
+};
+
+line.onchange = drawCharts;
+fromDate.onchange = drawCharts;
+toDate.onchange = drawCharts;
+
+function activeBtn(){
+    airBtn.classList.remove("btn-active");
+    massBtn.classList.remove("btn-active");
+    speedBtn.classList.remove("btn-active");
+
+    if(currentType === "air") airBtn.classList.add("btn-active");
+    if(currentType === "mass") massBtn.classList.add("btn-active");
+    if(currentType === "speed") speedBtn.classList.add("btn-active");
+}
+
+async function refreshData(){
+    statusBox.innerHTML = "Loading...<br>Rows : -";
+    await fetch("/refresh");
+    await loadData(true);
+}
+
+async function loadData(forceDate=false){
+    const res = await fetch("/api/data");
+    const result = await res.json();
+
+    rawData = result.data || [];
+    specData = result.spec || {};
+
+    if(rawData.length){
+        const dates = rawData.map(x => x.date).sort();
+        if(forceDate || !fromDate.value) fromDate.value = dates[0];
+        if(forceDate || !toDate.value) toDate.value = dates[dates.length - 1];
+    }
+
+    statusBox.innerHTML =
+        "Last Refresh : " + (result.last_refresh || "-") +
+        "<br>Rows : " + rawData.length;
+
+    drawCharts();
+}
+
+function getData(){
+    const ln = line.value;
+    const f = fromDate.value;
+    const t = toDate.value;
+
+    return rawData
+        .filter(x =>
+            x.line === ln &&
+            (!f || x.date >= f) &&
+            (!t || x.date <= t)
+        )
+        .sort((a,b) => {
+            const ad = a.datetime || a.date || "";
+            const bd = b.datetime || b.date || "";
+            return ad.localeCompare(bd);
+        });
+}
+
+function destroyCharts(){
+    charts.forEach(c => c.destroy());
+    charts = [];
+}
+
+function getZoneSpec(type, ln, zone){
+    if(!specData[type]) return null;
+    if(!specData[type][ln]) return null;
+    return specData[type][ln][zone] || specData[type][ln][String(zone)] || null;
+}
+
+function getSpeedSpec(ln){
+    if(!specData.speed) return null;
+    return specData.speed[ln] || null;
+}
+
+function constantArray(length, value){
+    if(value === undefined || value === null) return [];
+    return new Array(length).fill(value);
+}
+
+function pointColors(values, spec){
+    if(!spec) return values.map(() => "#168bff");
+    return values.map(v => {
+        if(v === null || v === undefined) return "#168bff";
+        if(spec.ucl !== undefined && v > spec.ucl) return "#ff3333";
+        if(spec.lcl !== undefined && v < spec.lcl) return "#ff3333";
+        return "#168bff";
+    });
+}
+
+function makeDatasets(labels, values, spec, labelName){
+    const pointColor = pointColors(values, spec);
+    const datasets = [
+        {
+            label: labelName,
+            data: values,
+            borderColor: "#168bff",
+            backgroundColor: "#168bff",
+            pointBackgroundColor: pointColor,
+            pointBorderColor: pointColor,
+            pointRadius: 3,
+            borderWidth: 2,
+            tension: 0.2,
+            datalabels: {
+                display: showValue,
+                align: "top",
+                anchor: "end",
+                color: "#111",
+                font: { size: 9 },
+                formatter: function(value){ return value === null ? "" : value; }
+            }
+        }
+    ];
+
+    if(spec && spec.ucl !== undefined){
+        datasets.push({
+            label: "UCL",
+            data: constantArray(labels.length, spec.ucl),
+            borderColor: "#ff3333",
+            borderDash: [6, 5],
+            pointRadius: 0,
+            borderWidth: 1.5,
+            datalabels: { display: false }
+        });
+    }
+
+    if(spec && spec.std !== undefined){
+        datasets.push({
+            label: "STD",
+            data: constantArray(labels.length, spec.std),
+            borderColor: "#22aa55",
+            borderDash: [6, 5],
+            pointRadius: 0,
+            borderWidth: 1.5,
+            datalabels: { display: false }
+        });
+    }
+
+    if(spec && spec.lcl !== undefined){
+        datasets.push({
+            label: "LCL",
+            data: constantArray(labels.length, spec.lcl),
+            borderColor: "#ff3333",
+            borderDash: [6, 5],
+            pointRadius: 0,
+            borderWidth: 1.5,
+            datalabels: { display: false }
+        });
+    }
+
+    return datasets;
+}
+
+function chartOptions(){
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+            mode: "index",
+            intersect: false
+        },
+        plugins: {
+            legend: {
+                display: true,
+                labels: { boxWidth: 18 }
+            },
+            tooltip: {
+                enabled: true
+            },
+            datalabels: {
+                clip: false
+            }
+        },
+        scales: {
+            x: {
+                ticks: {
+                    maxRotation: 0,
+                    autoSkip: true,
+                    maxTicksLimit: 8
+                }
+            },
+            y: {
+                beginAtZero: false
+            }
+        }
+    };
+}
+
+function drawCharts(){
+    destroyCharts();
+    const data = getData();
+    chartArea.innerHTML = "";
+
+    if(data.length === 0){
+        chartArea.innerHTML = "<div class='note'>No data</div>";
+        return;
+    }
+
+    const ln = line.value;
+
+    if(currentType === "speed"){
+        chartArea.innerHTML = `
+        <div class="card" style="grid-column:1/3">
+            <h3>Conveyor Speed</h3>
+            <div class="chartBox"><canvas id="speedChart"></canvas></div>
+        </div>`;
+
+        const unique = {};
+        data.forEach((r, idx) => {
+            const key = r.datetime || (r.date + "_" + idx);
+            if(!(key in unique)){
+                unique[key] = {label: r.label, value: r.speed};
+            }
+        });
+
+        const arr = Object.keys(unique).sort().map(k => unique[k]).filter(x => x.value !== null);
+        const labels = arr.map(x => x.label);
+        const values = arr.map(x => x.value);
+        const sp = getSpeedSpec(ln);
+
+        const datasets = makeDatasets(labels, values, sp, "Conveyor Speed");
+
+        const chart = new Chart(document.getElementById("speedChart"), {
+            type: "line",
+            data: { labels, datasets },
+            options: chartOptions()
+        });
+        charts.push(chart);
+        return;
+    }
+
+    for(let z=1; z<=12; z++){
+        chartArea.innerHTML += `
+        <div class="card">
+            <h3>Zone ${z}</h3>
+            <div class="chartBox"><canvas id="c${z}"></canvas></div>
+        </div>`;
+    }
+
+    for(let z=1; z<=12; z++){
+        const rows = data.filter(x => x.zone === z);
+        const labels = rows.map(x => x.label);
+        const values = rows.map(x => currentType === "air" ? x.air : x.mass);
+        const sp = getZoneSpec(currentType, ln, z);
+        const title = currentType.toUpperCase();
+        const datasets = makeDatasets(labels, values, sp, title);
+
+        const chart = new Chart(document.getElementById("c" + z), {
+            type: "line",
+            data: { labels, datasets },
+            options: chartOptions()
+        });
+        charts.push(chart);
+    }
+}
+
+loadData();
+</script>
+
+</body>
+</html>
+
