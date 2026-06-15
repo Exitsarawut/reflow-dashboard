@@ -317,7 +317,7 @@ async function refreshData(){
 }
 
 async function loadData(forceDate=false){
-    const res = await fetch("/api/data");
+    const res = await fetch("./static/data.json");
     const result = await res.json();
 
     rawData = result.data || [];
