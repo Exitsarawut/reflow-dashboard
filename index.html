@@ -321,7 +321,7 @@ async function loadData(forceDate=false){
     const result = await res.json();
 
     rawData = result.data || [];
-    specData = result.spec || {};
+    specData = {};
 
     if(rawData.length){
         const dates = rawData.map(x => x.date).sort();
@@ -330,7 +330,7 @@ async function loadData(forceDate=false){
     }
 
     statusBox.innerHTML =
-        "Last Refresh : " + (result.last_refresh || "-") +
+        "Last Refresh : GitHub Data" +
         "<br>Rows : " + rawData.length;
 
     drawCharts();
