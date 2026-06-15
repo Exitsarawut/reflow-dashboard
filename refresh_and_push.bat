@@ -1,6 +1,8 @@
-start http://127.0.0.1:5000/refresh
+@echo off
 
-timeout /t 5
+curl http://127.0.0.1:5000/refresh
+
+timeout /t 3
 
 git add .
 git commit -m "update data"
