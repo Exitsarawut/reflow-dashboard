@@ -5,7 +5,7 @@ cd /d "C:\Users\SMK\OneDrive - GPV Group\Desktop\ReflowDashboard"
 echo Refreshing data...
 curl http://127.0.0.1:5000/refresh
 
-timeout /t 3
+timeout /t 10
 
 echo Uploading to GitHub...
 
