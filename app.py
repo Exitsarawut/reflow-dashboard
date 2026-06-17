@@ -374,7 +374,19 @@ def refresh():
             DATA_CACHE,
             f,
             ensure_ascii=False
-        )
+    )
+
+    with open(
+       "static/spec.json",
+       "w",
+        encoding="utf-8"
+    ) as f:
+
+        json.dump(
+            SPEC_CACHE,
+            f,
+            ensure_ascii=False
+    )
 
     LAST_REFRESH = datetime.now().strftime(
         "%Y-%m-%d %H:%M:%S"
