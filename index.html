@@ -316,13 +316,11 @@ async function refreshData(){
 }
 
 async function loadData(forceDate=false){
-    const res = await fetch("/api/data");
-    const result = await res.json();
-    
-    console.log("JSON length =", result.length);
+    const dataRes = await fetch("/static/data.json?v=" + Date.now());
+    const specRes = await fetch("/static/spec.json?v=" + Date.now());
 
-    rawData = result.data || [];
-    specData = result.spec || {};
+    rawData = await dataRes.json();
+    specData = await specRes.json();
 
     if(rawData.length){
         const dates = rawData.map(x => x.date).sort();
@@ -553,7 +551,13 @@ function drawCharts(){
     }
 }
 
-loadData();
+loadData().catch(err => {
+    console.error(err);
+    statusBox.innerHTML =
+        "ERROR<br>" + err.message;
+});
+
+
 </script>
 
 </body>

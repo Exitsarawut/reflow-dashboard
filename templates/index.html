@@ -312,16 +312,15 @@ function activeBtn(){
 
 async function refreshData(){
     statusBox.innerHTML = "Loading...<br>Rows : -";
-    await fetch("/refresh");
     await loadData(true);
 }
 
 async function loadData(forceDate=false){
-    const res = await fetch("./data.json");
-    const result = await res.json();
+    const dataRes = await fetch("/static/data.json?v=" + Date.now());
+    const specRes = await fetch("/static/spec.json?v=" + Date.now());
 
-    rawData = result || [];
-    specData = {};
+    rawData = await dataRes.json();
+    specData = await specRes.json();
 
     if(rawData.length){
         const dates = rawData.map(x => x.date).sort();
@@ -330,7 +329,7 @@ async function loadData(forceDate=false){
     }
 
     statusBox.innerHTML =
-        "Last Refresh : " + (result.last_refresh || "-") +
+        "Last Refresh : GitHub Data" +
         "<br>Rows : " + rawData.length;
 
     drawCharts();
@@ -539,6 +538,7 @@ function drawCharts(){
         const labels = rows.map(x => x.label);
         const values = rows.map(x => currentType === "air" ? x.air : x.mass);
         const sp = getZoneSpec(currentType, ln, z);
+        console.log("ZONE", z, sp);
         const title = currentType.toUpperCase();
         const datasets = makeDatasets(labels, values, sp, title);
 
@@ -551,7 +551,13 @@ function drawCharts(){
     }
 }
 
-loadData();
+loadData().catch(err => {
+    console.error(err);
+    statusBox.innerHTML =
+        "ERROR<br>" + err.message;
+});
+
+
 </script>
 
 </body>
