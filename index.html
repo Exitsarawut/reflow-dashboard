@@ -316,8 +316,8 @@ async function refreshData(){
 }
 
 async function loadData(forceDate=false){
-    const dataRes = await fetch("/static/data.json?v=" + Date.now());
-    const specRes = await fetch("/static/spec.json?v=" + Date.now());
+    const dataRes = await fetch("./static/data.json?v=" + Date.now());
+    const specRes = await fetch("./static/spec.json?v=" + Date.now());
 
     rawData = await dataRes.json();
     specData = await specRes.json();
